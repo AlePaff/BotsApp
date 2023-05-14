@@ -244,6 +244,12 @@ const data = {
             "```No input provided. Specify the text to be converted to QR code after the ```  *.qr*  ```command or reply to a text/image using the```  *.qr*  ```command.```",
         PROCESSING: "```Generating QR code. Please wait...```",
         IMAGE_CAPTION: "```Here's your QR image.```",
+    },    
+    random: {
+        DESCRIPTION: "Given a list of items, pick a random one.",
+        EXTENDED_DESCRIPTION:
+            "```Choose a random value by using command``` *.random WatchTV WashDishes ...* .",
+        NO_ARG: "```Please enter at least one value to be picked. For example .random Value1 Value2```",
     },
     rbl: {
         DESCRIPTION: "Module to enable a blacklist person or group to use the bot.",
