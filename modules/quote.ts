@@ -31,7 +31,7 @@ export = {
                 quote.PROCESSING,
                 MessageType.text
             );
-            console.log(JSON.stringify(chat));
+            // console.log(JSON.stringify(chat));
             const contact = client.store?.contacts[BotsApp.replyParticipant] || undefined;
             let quotedReply = BotsApp.replyMessage.replace(/```/g, '');
             let name = contact?.name || contact?.notify || (BotsApp.replyParticipant === BotsApp.owner ? client.sock.user.name : BotsApp.replyParticipant.split("@")[0]);

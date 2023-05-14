@@ -33,7 +33,7 @@ module.exports = {
             }
 
             let Response = await ud.define(text);
-            console.log(Response);
+            // console.log(Response);
             let result = Response.reduce(function (prev, current) {
                 return prev.thumbs_up + prev.thumbs_down >
                     current.thumbs_up + current.thumbs_down
