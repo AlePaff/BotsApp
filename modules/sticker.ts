@@ -20,11 +20,6 @@ export = {
         try {
             // Function to convert media to sticker
             const convertToSticker = async (imageId: string, replyChat: { message: any; type: any; }): Promise<void> => {
-                var downloading: proto.WebMessageInfo = await client.sendMessage(
-                    BotsApp.chatId,
-                    STICKER.DOWNLOADING,
-                    MessageType.text
-                );
                 const fileName: string = "./tmp/convert_to_sticker-" + imageId;
                 const stream: Transform = await downloadContentFromMessage(replyChat.message, replyChat.type);
                 await inputSanitization.saveBuffer(fileName, stream);
@@ -46,20 +41,11 @@ export = {
                             await inputSanitization.deleteFiles(
                                 fileName,
                                 stickerPath
-                            );
-                            await client.deleteMessage(BotsApp.chatId, {
-                                id: downloading.key.id,
-                                remoteJid: BotsApp.chatId,
-                                fromMe: true,
-                            }).catch(err => inputSanitization.handleError(err, client, BotsApp));
+                            );                            
                         })
                         .on('error', async (err: any) => {
                             inputSanitization.handleError(err, client, BotsApp)
-                            await client.deleteMessage(BotsApp.chatId, {
-                                id: downloading.key.id,
-                                remoteJid: BotsApp.chatId,
-                                fromMe: true,
-                            }).catch(err => inputSanitization.handleError(err, client, BotsApp));
+                            
                         });
                     return;
                 }
@@ -88,19 +74,11 @@ export = {
                             MessageType.sticker
                         ).catch(err => inputSanitization.handleError(err, client, BotsApp));
                         await inputSanitization.deleteFiles(fileName, stickerPath);
-                        await client.deleteMessage(BotsApp.chatId, {
-                            id: downloading.key.id,
-                            remoteJid: BotsApp.chatId,
-                            fromMe: true,
-                        }).catch(err => inputSanitization.handleError(err, client, BotsApp));
+                        
                     })
                     .on('error', async (err: any) => {
                         inputSanitization.handleError(err, client, BotsApp)
-                        await client.deleteMessage(BotsApp.chatId, {
-                            id: downloading.key.id,
-                            remoteJid: BotsApp.chatId,
-                            fromMe: true,
-                        }).catch(err => inputSanitization.handleError(err, client, BotsApp));
+                        
                     });
                 return;
             };
