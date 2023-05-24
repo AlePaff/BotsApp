@@ -36,6 +36,13 @@ setInterval(() => {
     store?.writeToFile('./session.data.json')
 }, 10_000);
 
+//returns the date and time in the format [INFO - 17-5 : 12:00:00]
+function info_date_time(): string {
+    let date = new Date();
+    return "[INFO - " + date.toLocaleDateString() + ":" + date.toLocaleTimeString() + "] ";
+}
+
+
 (async (): Promise<void> => {
     console.log(banner);
 
@@ -117,7 +124,9 @@ setInterval(() => {
                     } else if (connection === 'connecting') {
                         console.log(chalk.yellowBright("[INFO] Connecting to WhatsApp..."));
                     } else if (connection === 'open') {
-                        console.log(chalk.greenBright.bold("[INFO] Connected! Welcome to BotsApp"));
+                        // console.log(chalk.greenBright.bold("[INFO] Connected! Welcome to BotsApp"));
+                        //show [INFO - 17-5 : 12:00:00] Connected! Welcome to BotsApp
+                        console.log(chalk.greenBright.bold(info_date_time() + "Connected! Welcome to BotsApp"));
                     }
                 }
 
@@ -179,7 +188,7 @@ setInterval(() => {
                                 }
                             }
                             await sock.sendMessage(chat.key.remoteJid, reactionMessage);
-                            console.log(chalk.redBright.bold(`[INFO] ${BotsApp.commandName} command executed.`));
+                            console.log(chalk.redBright.bold(`${info_date_time()} ${BotsApp.commandName} command executed.`));
                             const command = commandHandler.get(BotsApp.commandName);
                             var args = BotsApp.body.trim().split(/\s+/).slice(1);
                             if (!command) {
