@@ -7,11 +7,16 @@ import Client from "../sidekick/client";
 import { downloadContentFromMessage, proto } from "@adiwajshing/baileys";
 import BotsApp from "../sidekick/sidekick";
 import { Transform } from "stream";
-
-import { randomBytes } from 'crypto'
-
+import { Sticker, Categories, StickerTypes } from 'wa-sticker-formatter'
 
 const STICKER = Strings.sticker;
+
+function getStickerType(arg: string): StickerTypes {
+    if (Object.values(StickerTypes).includes(arg as StickerTypes)) {
+        return arg as StickerTypes;
+    }
+    return StickerTypes.FULL;
+}
 
 export = {
     name: "sticker",
@@ -27,15 +32,34 @@ export = {
                 const stream: Transform = await downloadContentFromMessage(replyChat.message, replyChat.type);
                 await inputSanitization.saveBuffer(fileName, stream);
                 const stickerPath: string = "./tmp/st-" + imageId + ".webp";
+
+                // if user sent arguments use wa-sticker-formatter to create stickers, else use the old method
+                if (metadata.args_length > 0) {
+                    const stickerMeta = new Sticker(fileName, {
+                        categories: metadata.categories,
+                        type: metadata.type,
+                        pack: metadata.pack,
+                        author: metadata.author,
+                    })
+                    await stickerMeta.toFile(stickerPath)
+
+                    await client.sendMessage(
+                        BotsApp.chatId,
+                        fs.readFileSync(stickerPath),
+                        MessageType.sticker
+                    ).catch(err => inputSanitization.handleError(err, client, BotsApp));
+                    await inputSanitization.deleteFiles(
+                        fileName,
+                        stickerPath
+                    );
+                    return;
+                }
+
+                // ==== previous code as a backup =====
                 // If is an image
                 if (BotsApp.type === "image" || BotsApp.isReplyImage) {
                     ffmpeg(fileName)
                         .outputOptions(["-y", "-vcodec libwebp"])
-                        .outputOptions(
-                            '-metadata', `emojis=${metadata.emojis}`,
-                            '-metadata', `sticker-pack-publisher=${metadata.author}`,
-                            '-metadata', `sticker-pack-name=${metadata.name}`
-                        )
                         .videoFilters(
                             "scale=2000:2000:flags=lanczos:force_original_aspect_ratio=decrease,format=rgba,pad=2000:2000:(ow-iw)/2:(oh-ih)/2:color=#00000000,setsar=1"
                         )
@@ -46,10 +70,10 @@ export = {
                                 fs.readFileSync(stickerPath),
                                 MessageType.sticker
                             ).catch(err => inputSanitization.handleError(err, client, BotsApp));
-                            // await inputSanitization.deleteFiles(
-                            //     fileName,
-                            //     stickerPath
-                            // );
+                            await inputSanitization.deleteFiles(
+                                fileName,
+                                stickerPath
+                            );
                         })
                         .on('error', async (err: any) => {
                             inputSanitization.handleError(err, client, BotsApp)
@@ -91,12 +115,20 @@ export = {
                 return;
             };
 
-            let metadata = {
-                emojis: args[0].split(",") ?? '[]',
-                pack_name: args[1] ?? '',
-                author_name: args[2] ?? ''
+            // Get metadata from args (optional)
+            const arg_emojis: Categories[] = [];
+            if (args.length > 0) {
+                for (let i = 0; i < args[0].split(",").length; i++) {
+                    arg_emojis.push(args[0].split(",")[i] as Categories);
+                }
             }
-            console.log("emoji=", metadata.emojis, "pack=", metadata.pack_name, "author=", metadata.author_name)
+            let metadata = {
+                args_length: args.length,
+                categories: args[0] != "null" ? arg_emojis : [],
+                type: args[1] != "null" ? getStickerType(args[1]) : StickerTypes.FULL,
+                pack_name: args[2] ?? '',
+                author_name: args[3] ?? ''
+            }
 
             // User sends media message along with command in caption
             if (BotsApp.isImage || BotsApp.isGIF || BotsApp.isVideo) {
