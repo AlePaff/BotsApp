@@ -8,6 +8,9 @@ import { downloadContentFromMessage, proto } from "@adiwajshing/baileys";
 import BotsApp from "../sidekick/sidekick";
 import { Transform } from "stream";
 
+import { randomBytes } from 'crypto'
+
+
 const STICKER = Strings.sticker;
 
 export = {
@@ -19,7 +22,7 @@ export = {
         // Task starts here
         try {
             // Function to convert media to sticker
-            const convertToSticker = async (imageId: string, replyChat: { message: any; type: any; }): Promise<void> => {
+            const convertToSticker = async (imageId: string, replyChat: { message: any; type: any; }, metadata: any): Promise<void> => {
                 const fileName: string = "./tmp/convert_to_sticker-" + imageId;
                 const stream: Transform = await downloadContentFromMessage(replyChat.message, replyChat.type);
                 await inputSanitization.saveBuffer(fileName, stream);
@@ -28,6 +31,11 @@ export = {
                 if (BotsApp.type === "image" || BotsApp.isReplyImage) {
                     ffmpeg(fileName)
                         .outputOptions(["-y", "-vcodec libwebp"])
+                        .outputOptions(
+                            '-metadata', `emojis=${metadata.emojis}`,
+                            '-metadata', `sticker-pack-publisher=${metadata.author}`,
+                            '-metadata', `sticker-pack-name=${metadata.name}`
+                        )
                         .videoFilters(
                             "scale=2000:2000:flags=lanczos:force_original_aspect_ratio=decrease,format=rgba,pad=2000:2000:(ow-iw)/2:(oh-ih)/2:color=#00000000,setsar=1"
                         )
@@ -38,14 +46,14 @@ export = {
                                 fs.readFileSync(stickerPath),
                                 MessageType.sticker
                             ).catch(err => inputSanitization.handleError(err, client, BotsApp));
-                            await inputSanitization.deleteFiles(
-                                fileName,
-                                stickerPath
-                            );                            
+                            // await inputSanitization.deleteFiles(
+                            //     fileName,
+                            //     stickerPath
+                            // );
                         })
                         .on('error', async (err: any) => {
                             inputSanitization.handleError(err, client, BotsApp)
-                            
+
                         });
                     return;
                 }
@@ -74,14 +82,21 @@ export = {
                             MessageType.sticker
                         ).catch(err => inputSanitization.handleError(err, client, BotsApp));
                         await inputSanitization.deleteFiles(fileName, stickerPath);
-                        
+
                     })
                     .on('error', async (err: any) => {
                         inputSanitization.handleError(err, client, BotsApp)
-                        
+
                     });
                 return;
             };
+
+            let metadata = {
+                emojis: args[0].split(",") ?? '[]',
+                pack_name: args[1] ?? '',
+                author_name: args[2] ?? ''
+            }
+            console.log("emoji=", metadata.emojis, "pack=", metadata.pack_name, "author=", metadata.author_name)
 
             // User sends media message along with command in caption
             if (BotsApp.isImage || BotsApp.isGIF || BotsApp.isVideo) {
@@ -90,7 +105,7 @@ export = {
                     type: BotsApp.type
                 };
                 var imageId: string = chat.key.id;
-                convertToSticker(imageId, replyChatObject);
+                convertToSticker(imageId, replyChatObject, metadata);
             }
             // Replied to an image , gif or video
             else if (
@@ -104,7 +119,7 @@ export = {
                 };
                 var imageId: string =
                     chat.message.extendedTextMessage.contextInfo.stanzaId;
-                convertToSticker(imageId, replyChatObject);
+                convertToSticker(imageId, replyChatObject, metadata);
             } else {
                 client.sendMessage(
                     BotsApp.chatId,
