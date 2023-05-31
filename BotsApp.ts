@@ -122,7 +122,7 @@ function info_date_time(): string {
                             process.exit(0);
                         }
                     } else if (connection === 'connecting') {
-                        console.log(chalk.yellowBright("[INFO] Connecting to WhatsApp..."));
+                        console.log(chalk.yellowBright(info_date_time() + "Connecting to WhatsApp..."));
                     } else if (connection === 'open') {
                         // console.log(chalk.greenBright.bold("[INFO] Connected! Welcome to BotsApp"));
                         //show [INFO - 17-5 : 12:00:00] Connected! Welcome to BotsApp
