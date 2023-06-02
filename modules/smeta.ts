@@ -28,7 +28,7 @@ export = {
 
         if (BotsApp.isReplySticker) {
 
-            
+
 
             var replyChatObject: any = {
                 message: chat.message.extendedTextMessage.contextInfo.quotedMessage.stickerMessage,
@@ -51,6 +51,7 @@ export = {
                     metadata_original != null ? "Metadata:\n\n" + Object.keys(metadata_original).map(key => `${key}: ${metadata_original[key]}`).join('\n') : smeta.NO_METADATA,
                     MessageType.text,
                 ).catch(err => inputSanitization.handleError(err, client, BotsApp));
+                await inputSanitization.deleteFiles(filePath);
                 return
             }
 
@@ -61,19 +62,28 @@ export = {
                     smeta.CURRENTLY_NOT_SUPPORTED,
                     MessageType.text,
                 ).catch(err => inputSanitization.handleError(err, client, BotsApp));
+                await inputSanitization.deleteFiles(filePath);
                 return
             }
 
-            //null arguments returns error
-            if(args[0] == "null" || args[1] == "null" && args[2].length == 0 && args[3].length == 0) {
+            const validateArguments = (args: string[]): boolean => {
+                const keyword = "null"
+                for (let i = 0; i < args?.length; i++) {
+                    if (args[i] !== keyword) { return false }
+                }
+                return true;
+            }
+
+            //if all arguments are null returns error
+            if (validateArguments(args)) {
                 await client.sendMessage(
                     BotsApp.chatId,
                     smeta.NO_ARGUMENTS,
                     MessageType.text,
                 ).catch(err => inputSanitization.handleError(err, client, BotsApp));
+                await inputSanitization.deleteFiles(filePath);
                 return
             }
-            
             //it allows more than 1 emoji but its a secret for now (cuz its too picky and buggy)
             //convert from string separate by commas to Categories
             const arg_emojis: Categories[] = [];
@@ -83,20 +93,22 @@ export = {
 
             //cast string emojis: [ '💩', '🐶' ] to type Categories['💩', '🐶']
             const cast_to_categories = (arr: string[]): Categories[] => {
-                return arr.map(item => item as Categories);                
+                return arr.map(item => item as Categories);
             }
 
             let metadata = {
                 args_length: args.length,
                 categories: args[0] != "null" ? arg_emojis : cast_to_categories(metadata_original["emojis"]),
                 type: args[1] != "null" ? getStickerType(args[1]) : StickerTypes.FULL,
-                pack_name: args[2] ?? metadata_original['sticker-pack-name'],
-                author_name: args[3] ?? metadata_original['sticker-pack-publisher'],
+                // pack_name: args[2] ?? metadata_original['sticker-pack-name'],
+                pack_name: (args[2] == "null" || args[2].length == 0) ? metadata_original['sticker-pack-name'] : args[2],
+                // author_name: args[3] ?? metadata_original['sticker-pack-publisher'],
+                author_name: (args[3] == "null" || args[3].length == 0) ? metadata_original['sticker-pack-publisher'] : args[3],
                 id: metadata_original['sticker-id'],
                 // quality: 100, // The quality of the output file
                 // background: '#000000' // The sticker background color (only for full stickers)
             }
-            
+
             const sticker = new Sticker(filePath, {
                 categories: metadata.categories,
                 type: metadata.type,
