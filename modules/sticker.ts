@@ -38,8 +38,8 @@ export = {
                     const stickerMeta = new Sticker(fileName, {
                         categories: metadata.categories,
                         type: metadata.type,
-                        pack: metadata.pack,
-                        author: metadata.author,
+                        pack: metadata.pack_name,
+                        author: metadata.author_name,
                     })
                     await stickerMeta.toFile(stickerPath)
 
