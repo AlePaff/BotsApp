@@ -64,7 +64,7 @@ export = {
                 return
             }
 
-            console.log(args[0], args[1], args[2], args[3])
+            //null arguments returns error
             if(args[0] == "null" || args[1] == "null" && args[2].length == 0 && args[3].length == 0) {
                 await client.sendMessage(
                     BotsApp.chatId,
