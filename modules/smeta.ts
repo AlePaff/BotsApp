@@ -27,12 +27,8 @@ export = {
     async handle(client: Client, chat: proto.IWebMessageInfo, BotsApp: BotsApp, args: string[]): Promise<void> {
 
         if (BotsApp.isReplySticker) {
-            //it allows more than 1 emoji but its a secret for now
-            //convert from string separate by commas to Categories
-            const arg_emojis: Categories[] = [];
-            for (let i = 0; i < args[0].split(",").length; i++) {
-                arg_emojis.push(args[0].split(",")[i] as Categories);
-            }
+
+            
 
             var replyChatObject: any = {
                 message: chat.message.extendedTextMessage.contextInfo.quotedMessage.stickerMessage,
@@ -45,17 +41,59 @@ export = {
             await inputSanitization.saveBuffer(filePath, stream);
 
             const stickerRead = readFileSync(filePath)
-            let metadata = await extractMetadata(stickerRead) // { emojis: [], 'sticker-pack-id': '', 'sticker-pack-name': '', 'sticker-author-name': '' }
+            let metadata_original = await extractMetadata(stickerRead)
 
-            const sticker = new Sticker(filePath, {
-                categories: args[0] != "null" ? arg_emojis : [],
+            //no arguments prints metadata
+            if (args.length <= 0) {
+                await client.sendMessage(
+                    BotsApp.chatId,
+                    // it prints the metadata in a json format with an enter between each key:value
+                    metadata_original != null ? "Metadata:\n\n" + Object.keys(metadata_original).map(key => `${key}: ${metadata_original[key]}`).join('\n') : smeta.NO_METADATA,
+                    MessageType.text,
+                ).catch(err => inputSanitization.handleError(err, client, BotsApp));
+                return
+            }
+
+            //if sticker is an animated sticker
+            if (chat.message.extendedTextMessage.contextInfo.quotedMessage.stickerMessage.isAnimated) {
+                await client.sendMessage(
+                    BotsApp.chatId,
+                    smeta.CURRENTLY_NOT_SUPPORTED,
+                    MessageType.text,
+                ).catch(err => inputSanitization.handleError(err, client, BotsApp));
+                return
+            }
+            
+            //it allows more than 1 emoji but its a secret for now (cuz its too picky and buggy)
+            //convert from string separate by commas to Categories
+            const arg_emojis: Categories[] = [];
+            for (let i = 0; i < args[0].split(",").length; i++) {
+                arg_emojis.push(args[0].split(",")[i] as Categories);
+            }
+
+            //cast string emojis: [ '💩', '🐶' ] to type Categories['💩', '🐶']
+            const cast_to_categories = (arr: string[]): Categories[] => {
+                return arr.map(item => item as Categories);                
+            }
+
+            let metadata = {
+                args_length: args.length,
+                categories: args[0] != "null" ? arg_emojis : cast_to_categories(metadata_original["emojis"]),
                 type: args[1] != "null" ? getStickerType(args[1]) : StickerTypes.FULL,
-                pack: args[2] ?? metadata['sticker-pack-name'],
-                author: args[3] ?? metadata['sticker-author-name']
-                // id: '12345', // The sticker id
+                pack_name: args[2] ?? metadata_original['sticker-pack-name'],
+                author_name: args[3] ?? metadata_original['sticker-pack-publisher'],
+                id: metadata_original['sticker-id'],
                 // quality: 100, // The quality of the output file
                 // background: '#000000' // The sticker background color (only for full stickers)
+            }
+            
+            const sticker = new Sticker(filePath, {
+                categories: metadata.categories,
+                type: metadata.type,
+                pack: metadata.pack_name,
+                author: metadata.author_name,
             })
+
             await sticker.toFile(fileWebp)
             await client.sendMessage(
                 BotsApp.chatId,
@@ -63,7 +101,14 @@ export = {
                 MessageType.sticker,
             ).catch(err => inputSanitization.handleError(err, client, BotsApp));
             await inputSanitization.deleteFiles(filePath, fileWebp);
+        } else {
+            await client.sendMessage(
+                BotsApp.chatId,
+                smeta.NO_REPLY,
+                MessageType.text
+            ).catch(err => inputSanitization.handleError(err, client, BotsApp));
         }
+        return
     }
 
 };
