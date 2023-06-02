@@ -297,6 +297,8 @@ const data = {
         NO_REPLY: "```Please reply to a sticker message.```",
         NO_METADATA: "```No metadata found for this sticker.```",
         CURRENTLY_NOT_SUPPORTED: "```Change animated stickers metadata is currently not supported.```",
+        NO_ARGUMENTS: "```Please specify at least one argument.```",
+
     },
     song: {
         DESCRIPTION: "Download songs",

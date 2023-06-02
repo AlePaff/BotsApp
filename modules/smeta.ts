@@ -63,6 +63,16 @@ export = {
                 ).catch(err => inputSanitization.handleError(err, client, BotsApp));
                 return
             }
+
+            console.log(args[0], args[1], args[2], args[3])
+            if(args[0] == "null" || args[1] == "null" && args[2].length == 0 && args[3].length == 0) {
+                await client.sendMessage(
+                    BotsApp.chatId,
+                    smeta.NO_ARGUMENTS,
+                    MessageType.text,
+                ).catch(err => inputSanitization.handleError(err, client, BotsApp));
+                return
+            }
             
             //it allows more than 1 emoji but its a secret for now (cuz its too picky and buggy)
             //convert from string separate by commas to Categories
